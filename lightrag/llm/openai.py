@@ -160,6 +160,12 @@ async def openai_complete_if_cache(
     # Remove special kwargs that shouldn't be passed to OpenAI
     kwargs.pop("hashing_kv", None)
     kwargs.pop("keyword_extraction", None)
+    
+    # Handle max_tokens vs max_completion_tokens for O-series models
+    if model.startswith(("o1", "o2", "o3", "o4")) and "max_tokens" in kwargs:
+        max_tokens_value = kwargs.pop("max_tokens")
+        kwargs["max_completion_tokens"] = max_tokens_value
+        logger.info(f"Converting max_tokens to max_completion_tokens for {model}")
 
     # Prepare messages
     messages: list[dict[str, Any]] = []
@@ -404,6 +410,27 @@ async def nvidia_openai_complete(
     if keyword_extraction:  # TODO: use JSON API
         return locate_json_string_body_from_string(result)
     return result
+
+
+async def o4_mini_complete(
+    prompt,
+    system_prompt=None,
+    history_messages=None,
+    keyword_extraction=False,
+    **kwargs,
+) -> str:
+    if history_messages is None:
+        history_messages = []
+    keyword_extraction = kwargs.pop("keyword_extraction", None)
+    if keyword_extraction:
+        kwargs["response_format"] = GPTKeywordExtractionFormat
+    return await openai_complete_if_cache(
+        "o4-mini",
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        **kwargs,
+    )
 
 
 @wrap_embedding_func_with_attrs(embedding_dim=1536, max_token_size=8192)

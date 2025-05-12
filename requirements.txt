@@ -20,3 +20,12 @@ tenacity
 # LLM packages
 tiktoken
 xlsxwriter>=3.1.0
+
+lightrag[all]
+redis
+neo4j
+pymilvus
+
+# Optional dependencies
+# psycopg2-binary
+# pymongo
