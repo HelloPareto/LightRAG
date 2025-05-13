@@ -2325,7 +2325,7 @@ TABLES = {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_ENTITY (
                     id VARCHAR(255),
                     workspace VARCHAR(255),
-                    entity_name VARCHAR(255),
+                    entity_name TEXT,
                     content TEXT,
                     content_vector VECTOR,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
@@ -2339,8 +2339,8 @@ TABLES = {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_RELATION (
                     id VARCHAR(255),
                     workspace VARCHAR(255),
-                    source_id VARCHAR(256),
-                    target_id VARCHAR(256),
+                    source_id TEXT,
+                    target_id TEXT,
                     content TEXT,
                     content_vector VECTOR,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
