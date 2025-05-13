@@ -1,0 +1,72 @@
+# -----------------------------------------------------
+# PostgreSQL-only Docker Compose for LightRAG
+# -----------------------------------------------------
+# This configuration sets up a LightRAG instance with all storage components using PostgreSQL:
+# - KV Storage: PGKVStorage (document chunks, LLM cache)
+# - Vector Storage: PGVectorStorage (embeddings)
+# - Graph Storage: PGGraphStorage (using the AGE extension)
+# - Document Status Storage: PGDocStatusStorage
+#
+# To use this configuration:
+# 1. Copy the configuration from postgres/env-setup.txt to your .env file
+# 2. Copy postgres/config.ini to config.ini or use `-v ./postgres/config.ini:/app/config.ini:ro`
+# 3. Run with: docker-compose -f docker-compose-pg.yml up -d
+#
+# Note: This setup uses a custom PostgreSQL image with pgvector and AGE extensions pre-installed.
+
+services:
+  # -----------------------------------------------------
+  # LightRAG API & WebUI - Using Postgres for all storage
+  # -----------------------------------------------------
+  lightrag:
+    build: .
+    container_name: lightrag-server
+    # Wait until the Postgres database is ready before starting
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT:-9621}:9621"
+    volumes:
+      - ./data/rag_storage:/app/data/rag_storage
+      - ./data/inputs:/app/data/inputs
+      - ./postgres/config.ini:/app/config.ini:ro
+      # - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    restart: unless-stopped
+    extra_hosts:
+      # Allow containers to access services running on the docker host
+      - "host.docker.internal:host-gateway"
+
+  # -----------------------------------------------------
+  # PostgreSQL with pgvector and AGE extensions for all storage components:
+  # - KV (for document chunks and LLM cache)
+  # - Vector (for embeddings)
+  # - Graph (using the AGE extension)
+  # - Document status 
+  # -----------------------------------------------------
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    container_name: lightrag-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-lightrag}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lightragpw}
+      - POSTGRES_DB=${POSTGRES_DATABASE:-lightragdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: ["postgres", "-c", "max_connections=${POSTGRES_MAX_CONNECTIONS:-200}"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lightrag} -d ${POSTGRES_DATABASE:-lightragdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data: 

@@ -1,0 +1,121 @@
+# PostgreSQL Environment Setup for LightRAG
+
+This guide explains how to set up your `.env` file to configure LightRAG to use PostgreSQL for all storage components.
+
+## Required .env Configurations
+
+Create or modify your `.env` file with the following content:
+
+```
+### Server Configuration
+HOST=0.0.0.0
+PORT=9621
+WORKERS=2
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+WEBUI_TITLE='Graph RAG Engine - PostgreSQL'
+WEBUI_DESCRIPTION="Full PostgreSQL Storage LightRAG System"
+
+### Directory Configuration (defaults to current working directory)
+WORKING_DIR=/app/data/rag_storage
+INPUT_DIR=/app/data/inputs
+
+### Ollama Emulating Model Tag
+OLLAMA_EMULATING_MODEL_TAG=latest
+
+### Max nodes return from grap retrieval
+MAX_GRAPH_NODES=1000
+
+### Logging level
+LOG_LEVEL=INFO
+VERBOSE=False
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
+
+### Settings for RAG query
+HISTORY_TURNS=3
+COSINE_THRESHOLD=0.2
+TOP_K=60
+MAX_TOKEN_TEXT_CHUNK=4000
+MAX_TOKEN_RELATION_DESC=4000
+MAX_TOKEN_ENTITY_DESC=4000
+
+### Settings for document indexing
+SUMMARY_LANGUAGE=English
+CHUNK_SIZE=1200
+CHUNK_OVERLAP_SIZE=100
+
+### Number of parallel processing documents in one patch
+MAX_PARALLEL_INSERT=2
+
+### Max tokens for entity/relations description after merge
+MAX_TOKEN_SUMMARY=500
+### Number of entities/edges to trigger LLM re-summary on merge (at least 3 is recommended)
+FORCE_LLM_SUMMARY_ON_MERGE=6
+
+### Num of chunks send to Embedding in single request
+EMBEDDING_BATCH_NUM=32
+### Max concurrency requests for Embedding
+EMBEDDING_FUNC_MAX_ASYNC=16
+MAX_EMBED_TOKENS=8192
+
+### LLM Configuration
+### Time out in seconds for LLM, None for infinite timeout
+TIMEOUT=150
+### Some models like o1-mini require temperature to be set to 1
+TEMPERATURE=0.5
+### Max concurrency requests of LLM
+MAX_ASYNC=4
+### Max tokens send to LLM (less than context size of the model)
+MAX_TOKENS=32768
+ENABLE_LLM_CACHE=true
+ENABLE_LLM_CACHE_FOR_EXTRACT=true
+
+### Ollama example (For local services installed with docker, you can use host.docker.internal as host)
+LLM_BINDING=ollama
+LLM_MODEL=mistral-nemo:latest
+# LLM_BINDING_API_KEY=your_api_key
+LLM_BINDING_HOST=http://host.docker.internal:11434
+
+### Embedding Configuration (Use valid host. For local services installed with docker, you can use host.docker.internal)
+EMBEDDING_MODEL=bge-m3:latest
+EMBEDDING_DIM=1024
+# EMBEDDING_BINDING_API_KEY=your_api_key
+### ollama example
+EMBEDDING_BINDING=ollama
+EMBEDDING_BINDING_HOST=http://host.docker.internal:11434
+
+### Data storage selection - All using PostgreSQL
+LIGHTRAG_KV_STORAGE=PGKVStorage
+LIGHTRAG_VECTOR_STORAGE=PGVectorStorage
+LIGHTRAG_GRAPH_STORAGE=PGGraphStorage
+LIGHTRAG_DOC_STATUS_STORAGE=PGDocStatusStorage
+
+### PostgreSQL Configuration
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USER=lightrag
+POSTGRES_PASSWORD=lightragpw
+POSTGRES_DATABASE=lightragdb
+POSTGRES_MAX_CONNECTIONS=500
+# Workspace is used to separate data from different LightRAG instances
+POSTGRES_WORKSPACE=default
+
+### Neo4j Configuration - Not used but must be present 
+NEO4J_URI=neo4j://neo4j:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=password
+```
+
+## Important Notes
+
+1. This configuration uses PostgreSQL for all storage types including graph storage via `PGGraphStorage`. 
+   This requires the Apache AGE extension to be installed in PostgreSQL.
+
+2. You can run the PostgreSQL-based LightRAG setup using:
+   ```
+   docker-compose -f docker-compose-pg.yml up -d
+   ```
+
+3. Before running, ensure you have copied this configuration to your `.env` file or create a new `.env` file with this content.
+
+4. The Docker setup in docker-compose-pg.yml includes a custom PostgreSQL image with the AGE extension installed. 
